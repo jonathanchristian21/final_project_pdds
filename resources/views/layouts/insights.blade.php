@@ -497,7 +497,7 @@
 <body>
 
     <header class="app-header">
-        <div class="header-brand">Project DS</div>
+        <div class="header-brand">Superstore Data Analysis</div>
         <nav class="header-nav">
             <a href="{{ route('insights.index') }}" class="nav-link {{ request()->routeIs('insights.index') ? 'active' : '' }}">Overview</a>
             <a href="{{ route('insights.profitability') }}" class="nav-link {{ request()->routeIs('insights.profitability') ? 'active' : '' }}">Profitability</a>

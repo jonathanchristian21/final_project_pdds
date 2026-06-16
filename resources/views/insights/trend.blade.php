@@ -770,8 +770,8 @@
             const rate   = ((current - previous) / previous) * 100;
             const status = rate > 0 ? 'increasing' : (rate < 0 ? 'decreasing' : 'stable');
             const modeLabel = trendState.growthMode === 'last_period'
-                ? `${comparisonPoints[0].key} → ${comparisonPoints[1].key} (last period)`
-                : `${comparisonPoints[0].key} → ${comparisonPoints[1].key} (overall)`;
+                ? `${comparisonPoints[0].key} → ${comparisonPoints[1].key}`
+                : `${comparisonPoints[0].key} → ${comparisonPoints[1].key}`;
 
             return {
                 rate,
