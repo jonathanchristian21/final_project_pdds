@@ -96,6 +96,86 @@ class InsightDashboardService
         ];
     }
 
+    public function getProfitabilityDrilldownData(
+        string $category,
+        string $region,
+        string $level,
+        ?string $start,
+        ?string $end
+    ): array {
+        $insight = Insight::where('analysis_type', 'profit_analysis')
+            ->get()
+            ->firstWhere(function ($item) use ($category, $region) {
+                return ($item->dimensions['category'] ?? '') === $category 
+                    && ($item->dimensions['region'] ?? '') === $region;
+            });
+
+        if (!$insight || !isset($insight->period_data)) {
+            return [
+                'category' => $category,
+                'region'   => $region,
+                'level'    => $level,
+                'rows'     => [],
+            ];
+        }
+
+        $aggregated = [];
+        $drilldownKey = $level === 'subcategory' ? 'subcategory' : 'state';
+
+        foreach ($insight->period_data as $period) {
+            $periodStr = sprintf('%04d-%02d', $period['year'], $period['month']);
+
+            if ($start && $periodStr < $start) {
+                continue;
+            }
+            if ($end && $periodStr > $end) {
+                continue;
+            }
+
+            if (!isset($period['drilldown'][$drilldownKey])) {
+                continue;
+            }
+
+            foreach ($period['drilldown'][$drilldownKey] as $key => $data) {
+                if (!isset($aggregated[$key])) {
+                    $aggregated[$key] = [
+                        'label'             => $key,
+                        'total_sales'       => 0,
+                        'total_profit'      => 0,
+                        'transaction_count' => 0,
+                    ];
+                }
+
+                $aggregated[$key]['total_sales']       += $data['sales'];
+                $aggregated[$key]['total_profit']      += $data['profit'];
+                $aggregated[$key]['transaction_count'] += $data['transaction_count'];
+            }
+        }
+
+        $rows = array_values($aggregated);
+
+        foreach ($rows as &$row) {
+            $totalSales  = (float) $row['total_sales'];
+            $totalProfit = (float) $row['total_profit'];
+            $margin      = $totalSales > 0 ? ($totalProfit / $totalSales) * 100 : 0;
+
+            $row['total_sales']   = round($totalSales, 2);
+            $row['total_profit']  = round($totalProfit, 2);
+            $row['profit_margin'] = round($margin, 2);
+            $row['status']        = $totalProfit > 0 ? 'Profit' : ($totalProfit < 0 ? 'Loss' : 'Neutral');
+        }
+        unset($row);
+
+        usort($rows, fn($a, $b) => $b['total_profit'] <=> $a['total_profit']);
+
+        return [
+            'category' => $category,
+            'region'   => $region,
+            'level'    => $level,
+            'rows'     => $rows,
+        ];
+    }
+
     private function transformProfitInsights(Collection $insights): array
     {
         return $this->sortByCategoryRegion(
