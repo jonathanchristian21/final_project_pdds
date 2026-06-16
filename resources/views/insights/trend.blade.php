@@ -16,22 +16,17 @@
         : 'No partial years detected';
 @endphp
 
-@section('hero')
-    <section class="hero">
-        <div class="hero-grid">
-            <span class="hero-kicker">Analysis 3</span>
-            <h1>Sales Trend</h1>
-            <div class="hero-meta">
-                <span class="meta-chip">Coverage: {{ $rangeLabel }}</span>
-            </div>
-        </div>
-    </section>
-@endsection
-
 @section('content')
-    <div class="stack">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1>Sales Trend & Growth</h1>
+            <p class="text-muted">Monitor sales volume across time and identify seasonal patterns.</p>
+        </div>
+    </div>
+
+    <div>
         <section class="dashboard-grid">
-            <aside class="filter-card">
+            <aside class="filter-sidebar card">
                 <h2>Filters</h2>
 
                 <div class="field">
@@ -88,81 +83,99 @@
                     </select>
                 </div>
 
-                <div class="button-row">
-                    <button type="button" class="button button-primary" id="trendApplyButton">Apply filters</button>
-                    <button type="button" class="button button-secondary" id="trendResetButton">Reset view</button>
+                <div class="flex gap-4" style="margin-top: 24px;">
+                    <button type="button" class="button button-primary" id="trendApplyButton">Apply</button>
+                    <button type="button" class="button button-secondary" id="trendResetButton">Reset</button>
                 </div>
-
             </aside>
 
             <div class="dashboard-main">
-                <section class="kpi-grid">
-                    <article class="kpi-card">
-                        <div class="kpi-label">Total sales</div>
-                        <div class="kpi-value" id="trendTotalSales">-</div>
-                        <div class="kpi-meta">Selected scope</div>
+                <section class="metric-grid">
+                    <article class="metric-card">
+                        <div class="metric-label">Total Sales</div>
+                        <div class="metric-value" id="trendTotalSales">-</div>
+                        <div class="metric-meta">Selected window</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label" id="trendGrowthLabel">Growth rate</div>
-                        <div class="kpi-value" id="trendGrowthRate">-</div>
-                        <div class="kpi-meta" id="trendGrowthMeta">-</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Monthly Avg Sales</div>
+                        <div class="metric-value" id="trendAvgSales">-</div>
+                        <div class="metric-meta">Mean over period</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label">Trend status</div>
-                        <div class="kpi-value" id="trendStatus">-</div>
-                        <div class="kpi-meta">Latest direction</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Total Transactions</div>
+                        <div class="metric-value" id="trendTransactions">-</div>
+                        <div class="metric-meta">Selected window</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label">Series tracked</div>
-                        <div class="kpi-value" id="trendSeriesCount">-</div>
-                        <div class="kpi-meta">Visible lines</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Trend Growth</div>
+                        <div class="metric-value" id="trendGrowth">-</div>
+                        <div class="metric-meta" id="trendGrowthMeta">Overall slope</div>
+                        <div style="margin-top: 10px; display: flex; gap: 6px;">
+                            <button type="button" id="growthModeStartEnd" class="growth-mode-btn is-active" title="Compare first period vs last period in selected window">Start → End</button>
+                            <button type="button" id="growthModeLastPeriod" class="growth-mode-btn" title="Compare second-to-last vs last period">Last Period</button>
+                        </div>
                     </article>
                 </section>
 
-                <section class="spotlight-card" id="trendSpotlight">
+                <section class="spotlight" id="trendSpotlight">
                     <span class="spotlight-tag">Insight spotlight</span>
-                    <p class="spotlight-copy">Waiting for the first render.</p>
+                    <p>Waiting for the first render.</p>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-body">
-                        <div class="panel-header">
-                            <div>
-                                <h2 class="panel-title">Sales Trajectory</h2>
-                            </div>
-                        </div>
-                        <div class="chart-frame" id="trendLineWrap">
-                            <canvas id="trendLineChart"></canvas>
-                        </div>
+                <section class="card mb-8">
+                    <h2 class="panel-title">Monthly Revenue Trajectory</h2>
+                    <div class="chart-container" id="trendChartWrap">
+                        <canvas id="trendLineChart"></canvas>
                     </div>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-body">
-                        <div class="panel-header">
-                            <div>
-                                <h2 class="panel-title">Detail Table</h2>
-                            </div>
-                        </div>
-                        <div class="data-table-wrap">
-                            <table class="data-table" id="trendTable">
-                                <thead>
-                                    <tr>
-                                        <th class="is-sortable" data-key="category">Category</th>
-                                        <th class="is-sortable" data-key="region">Region</th>
-                                        <th class="numeric is-sortable" data-key="total_sales">Total Sales</th>
-                                        <th class="numeric is-sortable" data-key="growth_rate">Growth Rate</th>
-                                        <th class="is-sortable" data-key="status">Trend</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="trendTableBody"></tbody>
-                            </table>
-                        </div>
+                <section class="card mb-8">
+                    <h2 class="panel-title">Detail Table</h2>
+                    <div class="table-wrap">
+                        <table class="data-table" id="trendTable">
+                            <thead>
+                                <tr>
+                                    <th class="is-sortable" data-key="category">Category</th>
+                                    <th class="is-sortable" data-key="region">Region</th>
+                                    <th class="numeric is-sortable" data-key="total_sales">Total Sales</th>
+                                    <th class="numeric is-sortable" data-key="avg_monthly_sales">Avg Monthly Sales</th>
+                                    <th class="numeric is-sortable" data-key="transaction_count">Transactions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trendTableBody"></tbody>
+                        </table>
                     </div>
                 </section>
             </div>
         </section>
     </div>
+@endsection
+
+@section('styles')
+<style>
+    .growth-mode-btn {
+        padding: 4px 10px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        border-radius: 5px;
+        border: 1px solid var(--border);
+        background: var(--surface-hover);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+    .growth-mode-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .growth-mode-btn.is-active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+</style>
 @endsection
 
 @section('scripts')
@@ -181,6 +194,7 @@
             endPeriod: 'all',
             sortKey: 'growth_rate',
             sortDirection: 'desc',
+            growthMode: 'start_end', // 'start_end' | 'last_period'
         };
 
         const trendDraftState = {
@@ -260,6 +274,21 @@
                 trendDraftState.endPeriod = 'all';
                 syncTrendControlsFromState();
                 populatePeriodFilters();
+                renderTrendDashboard();
+            });
+
+            // Growth mode toggle
+            document.getElementById('growthModeStartEnd').addEventListener('click', () => {
+                trendState.growthMode = 'start_end';
+                document.getElementById('growthModeStartEnd').classList.add('is-active');
+                document.getElementById('growthModeLastPeriod').classList.remove('is-active');
+                renderTrendDashboard();
+            });
+
+            document.getElementById('growthModeLastPeriod').addEventListener('click', () => {
+                trendState.growthMode = 'last_period';
+                document.getElementById('growthModeLastPeriod').classList.add('is-active');
+                document.getElementById('growthModeStartEnd').classList.remove('is-active');
                 renderTrendDashboard();
             });
 
@@ -359,10 +388,18 @@
                     const filteredPeriods = filterPeriodsByRange(item.period_data, trendState.granularity, trendState.startPeriod, trendState.endPeriod);
                     const growthSnapshot = computeGrowthFromPeriods(filteredPeriods, trendState.granularity);
 
+                    const total_sales = filteredPeriods.reduce((sum, period) => sum + Number(period.sales || 0), 0);
+                    const transaction_count = filteredPeriods.reduce((sum, period) => sum + Number(period.transaction_count || 0), 0);
+                    
+                    // If granularity is not month, we might need a better average, but for now length is fine
+                    const avg_monthly_sales = filteredPeriods.length > 0 ? total_sales / filteredPeriods.length : 0;
+
                     return {
                         category: item.category,
                         region: item.region,
-                        total_sales: filteredPeriods.reduce((sum, period) => sum + Number(period.sales || 0), 0),
+                        total_sales: total_sales,
+                        transaction_count: transaction_count,
+                        avg_monthly_sales: avg_monthly_sales,
                         growth_rate: Number(growthSnapshot.rate.toFixed(2)),
                         status: growthSnapshot.status,
                         period_data: filteredPeriods,
@@ -387,34 +424,28 @@
             const rows = getTrendRows();
             const groupedSeries = buildTrendLineSeries(rows);
 
-            renderTrendKPIs(rows, groupedSeries);
+            renderTrendMetrics(rows, groupedSeries);
             renderTrendSpotlight(rows, groupedSeries.mode);
             renderTrendChart(groupedSeries);
             renderTrendTable(rows);
         }
 
-        function renderTrendKPIs(rows, groupedSeries) {
+        function renderTrendMetrics(rows, groupedSeries) {
             const totalSales = rows.reduce((sum, row) => sum + row.total_sales, 0);
             const overallGrowth = computeGrowthFromPeriods(
                 rows.flatMap((row) => row.period_data),
                 trendState.granularity
             );
             const tone = overallGrowth.rate > 0 ? 'text-success' : (overallGrowth.rate < 0 ? 'text-danger' : '');
-            const growthLabel = trendState.granularity === 'month'
-                ? 'Growth rate (MoM)'
-                : (trendState.granularity === 'quarter' ? 'Growth rate (QoQ)' : 'Growth rate (YoY)');
-            const statusLabel = overallGrowth.status === 'increasing'
-                ? 'Increasing'
-                : (overallGrowth.status === 'decreasing' ? 'Decreasing' : 'Stable');
+            const avgSales = rows.reduce((sum, row) => sum + row.avg_monthly_sales, 0);
+            const totalTransactions = rows.reduce((sum, row) => sum + row.transaction_count, 0);
 
             document.getElementById('trendTotalSales').textContent = dashboardUtils.formatCurrency(totalSales);
-            document.getElementById('trendGrowthLabel').textContent = growthLabel;
-            document.getElementById('trendGrowthRate').textContent = dashboardUtils.formatPercent(overallGrowth.rate);
-            document.getElementById('trendStatus').textContent = statusLabel;
-            document.getElementById('trendSeriesCount').textContent = dashboardUtils.formatNumber(groupedSeries.datasets.length);
-            document.getElementById('trendGrowthRate').className = `kpi-value ${tone}`.trim();
-            document.getElementById('trendStatus').className = `kpi-value ${tone}`.trim();
+            document.getElementById('trendAvgSales').textContent = dashboardUtils.formatCurrency(avgSales / Math.max(1, rows.length));
+            document.getElementById('trendTransactions').textContent = dashboardUtils.formatNumber(totalTransactions);
+            document.getElementById('trendGrowth').textContent = dashboardUtils.formatPercent(overallGrowth.rate);
             document.getElementById('trendGrowthMeta').textContent = overallGrowth.message;
+            document.getElementById('trendGrowth').className = `metric-value ${tone}`.trim();
         }
 
         function renderTrendSpotlight(rows, mode) {
@@ -483,16 +514,19 @@
                     label: key,
                     data: periodKeys.map((periodKey) => Number((grouped[key][periodKey]?.sales || 0).toFixed(2))),
                     borderColor: dashboardUtils.pickColor(index),
-                    backgroundColor: dashboardUtils.pickColor(index),
+                    backgroundColor: dashboardUtils.pickColorAlpha(index, 0.08),
+                    fill: false,
                     tension: 0.35,
-                    pointRadius: 0,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: dashboardUtils.pickColor(index),
                     borderWidth: 2.5,
                 })),
             };
         }
 
         function renderTrendChart(groupedSeries) {
-            const wrap = document.getElementById('trendLineWrap');
+            const wrap = document.getElementById('trendChartWrap');
             dashboardUtils.destroyChart(trendLineChart);
 
             if (!groupedSeries.datasets.length) {
@@ -674,35 +708,48 @@
                 }
             }
 
-            const comparisonPoints = eligible.length >= 2 ? eligible.slice(-2) : points.slice(-2);
+            let comparisonPoints;
+            if (trendState.growthMode === 'last_period') {
+                // Compare the two most recent eligible buckets
+                comparisonPoints = eligible.length >= 2
+                    ? eligible.slice(-2)
+                    : (points.length >= 2 ? points.slice(-2) : []);
+            } else {
+                // Compare first bucket vs last bucket (start → end)
+                comparisonPoints = eligible.length >= 2
+                    ? [eligible[0], eligible[eligible.length - 1]]
+                    : (points.length >= 2 ? [points[0], points[points.length - 1]] : []);
+            }
 
             if (comparisonPoints.length < 2) {
                 return {
                     rate: 0,
                     status: 'stable',
-                    message: 'Not enough complete periods yet to compute a growth change.',
+                    message: 'Not enough complete periods to compute growth.',
                 };
             }
 
             const previous = comparisonPoints[0].value;
-            const current = comparisonPoints[1].value;
+            const current  = comparisonPoints[1].value;
 
             if (previous === 0) {
                 return {
                     rate: 0,
                     status: current > 0 ? 'increasing' : 'stable',
-                    message: `Growth compares ${comparisonPoints[0].key} and ${comparisonPoints[1].key}, but the earlier period starts from zero.`,
+                    message: `${comparisonPoints[0].key} → ${comparisonPoints[1].key}: baseline is zero.`,
                 };
             }
 
-            const rate = ((current - previous) / previous) * 100;
+            const rate   = ((current - previous) / previous) * 100;
             const status = rate > 0 ? 'increasing' : (rate < 0 ? 'decreasing' : 'stable');
-            const cadence = granularity === 'month' ? 'MoM' : (granularity === 'quarter' ? 'QoQ' : 'YoY');
+            const modeLabel = trendState.growthMode === 'last_period'
+                ? `${comparisonPoints[0].key} → ${comparisonPoints[1].key} (last period)`
+                : `${comparisonPoints[0].key} → ${comparisonPoints[1].key} (overall)`;
 
             return {
                 rate,
                 status,
-                message: `${cadence} growth compares ${comparisonPoints[0].key} against ${comparisonPoints[1].key}.`,
+                message: modeLabel,
             };
         }
     </script>
