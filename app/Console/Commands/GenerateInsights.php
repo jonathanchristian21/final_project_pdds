@@ -46,15 +46,13 @@ class GenerateInsights extends Command
                 'l.region',
                 'dd.year',
                 'dd.month',
+                'l.state',
+                'p.sub_category',
                 DB::raw('SUM(sf.sales) as period_sales'),
                 DB::raw('SUM(ROUND(sf.profit, 2)) as period_profit'),
                 DB::raw('COUNT(*) as transaction_count')
             )
-            ->groupBy('p.category', 'l.region', 'dd.year', 'dd.month')
-            ->orderBy('p.category')
-            ->orderBy('l.region')
-            ->orderBy('dd.year')
-            ->orderBy('dd.month')
+            ->groupBy('p.category', 'l.region', 'dd.year', 'dd.month', 'l.state', 'p.sub_category')
             ->get();
 
         $grouped = [];
@@ -62,6 +60,7 @@ class GenerateInsights extends Command
 
         foreach ($results as $row) {
             $key = "{$row->category}|{$row->region}";
+            $periodKey = "{$row->year}-{$row->month}";
 
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [
@@ -76,22 +75,69 @@ class GenerateInsights extends Command
                 ];
             }
 
+            if (!isset($grouped[$key]['periods'][$periodKey])) {
+                $grouped[$key]['periods'][$periodKey] = [
+                    'year' => (int) $row->year,
+                    'month' => (int) $row->month,
+                    'sales' => 0,
+                    'profit' => 0,
+                    'transaction_count' => 0,
+                    'drilldown' => [
+                        'state' => [],
+                        'subcategory' => [],
+                    ]
+                ];
+            }
+
             $periodSales = (float) $row->period_sales;
             $periodProfit = (float) $row->period_profit;
+            $txnCount = (int) $row->transaction_count;
 
             $rawGrouped[$key]['sales'] += $periodSales;
             $rawGrouped[$key]['profit'] += $periodProfit;
-            $rawGrouped[$key]['transaction_count'] += (int) $row->transaction_count;
+            $rawGrouped[$key]['transaction_count'] += $txnCount;
 
-            $grouped[$key]['periods'][] = [
-                'year' => (int) $row->year,
-                'month' => (int) $row->month,
-                'sales' => round($periodSales, 2),
-                'profit' => round($periodProfit, 2),
-                'profit_margin' => round($this->calculateMargin($periodProfit, $periodSales), 2),
-                'transaction_count' => (int) $row->transaction_count,
-            ];
+            $grouped[$key]['periods'][$periodKey]['sales'] += $periodSales;
+            $grouped[$key]['periods'][$periodKey]['profit'] += $periodProfit;
+            $grouped[$key]['periods'][$periodKey]['transaction_count'] += $txnCount;
+
+            $state = $row->state;
+            if (!isset($grouped[$key]['periods'][$periodKey]['drilldown']['state'][$state])) {
+                $grouped[$key]['periods'][$periodKey]['drilldown']['state'][$state] = [
+                    'sales' => 0,
+                    'profit' => 0,
+                    'transaction_count' => 0
+                ];
+            }
+            $grouped[$key]['periods'][$periodKey]['drilldown']['state'][$state]['sales'] += $periodSales;
+            $grouped[$key]['periods'][$periodKey]['drilldown']['state'][$state]['profit'] += $periodProfit;
+            $grouped[$key]['periods'][$periodKey]['drilldown']['state'][$state]['transaction_count'] += $txnCount;
+
+            $subcat = $row->sub_category;
+            if (!isset($grouped[$key]['periods'][$periodKey]['drilldown']['subcategory'][$subcat])) {
+                $grouped[$key]['periods'][$periodKey]['drilldown']['subcategory'][$subcat] = [
+                    'sales' => 0,
+                    'profit' => 0,
+                    'transaction_count' => 0
+                ];
+            }
+            $grouped[$key]['periods'][$periodKey]['drilldown']['subcategory'][$subcat]['sales'] += $periodSales;
+            $grouped[$key]['periods'][$periodKey]['drilldown']['subcategory'][$subcat]['profit'] += $periodProfit;
+            $grouped[$key]['periods'][$periodKey]['drilldown']['subcategory'][$subcat]['transaction_count'] += $txnCount;
         }
+
+        foreach ($grouped as $key => &$data) {
+            $periodsList = [];
+            foreach ($data['periods'] as $pk => $p) {
+                $p['profit_margin'] = round($this->calculateMargin($p['profit'], $p['sales']), 2);
+                $p['sales'] = round($p['sales'], 2);
+                $p['profit'] = round($p['profit'], 2);
+                $periodsList[] = $p;
+            }
+            usort($periodsList, fn($a, $b) => $a['year'] <=> $b['year'] ?: $a['month'] <=> $b['month']);
+            $data['periods'] = $periodsList;
+        }
+        unset($data);
 
         $bar = $this->output->createProgressBar(count($grouped));
         $bar->start();
