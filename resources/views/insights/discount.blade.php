@@ -13,22 +13,19 @@
         : 'Date range unavailable';
 @endphp
 
-@section('hero')
-    <section class="hero">
-        <div class="hero-grid">
-            <span class="hero-kicker">Analysis 2</span>
-            <h1>Discount Effectiveness</h1>
-            <div class="hero-meta">
-                <span class="meta-chip">Coverage: {{ $rangeLabel }}</span>
-            </div>
-        </div>
-    </section>
-@endsection
+
 
 @section('content')
-    <div class="stack">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1>Discount Effectiveness</h1>
+            <p class="text-muted">Analyze the relationship between discounts, sales volume, and profit margins.</p>
+        </div>
+    </div>
+
+    <div>
         <section class="dashboard-grid">
-            <aside class="filter-card">
+            <aside class="filter-sidebar card">
                 <h2>Filters</h2>
 
                 <div class="field">
@@ -41,88 +38,71 @@
                     </select>
                 </div>
 
-                <div class="button-row">
-                    <button type="button" class="button button-secondary" id="discountResetButton">Reset view</button>
+                <div class="flex gap-4" style="margin-top: 24px;">
+                    <button type="button" class="button button-primary" id="discountApplyButton">Apply</button>
+                    <button type="button" class="button button-secondary" id="discountResetButton">Reset</button>
                 </div>
-
             </aside>
 
             <div class="dashboard-main">
-                <section class="kpi-grid">
-                    <article class="kpi-card">
-                        <div class="kpi-label">Avg discount</div>
-                        <div class="kpi-value" id="discountAvgDiscount">-</div>
-                        <div class="kpi-meta">Weighted</div>
+                <section class="metric-grid">
+                    <article class="metric-card">
+                        <div class="metric-label">Avg discount</div>
+                        <div class="metric-value" id="discountAvg">-</div>
+                        <div class="metric-meta">Selected window</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label">Avg profit margin</div>
-                        <div class="kpi-value" id="discountAvgMargin">-</div>
-                        <div class="kpi-meta">Selected scope</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Avg profit margin</div>
+                        <div class="metric-value" id="discountMargin">-</div>
+                        <div class="metric-meta">Selected window</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label">Effectiveness status</div>
-                        <div class="kpi-value" id="discountStatus">-</div>
-                        <div class="kpi-meta" id="discountStatusMeta">-</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Sub-categories</div>
+                        <div class="metric-value" id="discountCount">-</div>
+                        <div class="metric-meta">In current view</div>
                     </article>
-                    <article class="kpi-card">
-                        <div class="kpi-label">Sub-categories tracked</div>
-                        <div class="kpi-value" id="discountSubcategories">-</div>
-                        <div class="kpi-meta">Visible points</div>
+                    <article class="metric-card">
+                        <div class="metric-label">Negative impact</div>
+                        <div class="metric-value text-danger" id="discountWarningCount">-</div>
+                        <div class="metric-meta">Sub-cats with margin < 0</div>
                     </article>
                 </section>
 
-                <section class="spotlight-card" id="discountSpotlight">
+                <section class="spotlight" id="discountSpotlight">
                     <span class="spotlight-tag">Insight spotlight</span>
-                    <p class="spotlight-copy">Waiting for the first render.</p>
+                    <p>Waiting for the first render.</p>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-body">
-                        <div class="panel-header">
-                            <div>
-                                <h2 class="panel-title">Discount vs Profit Margin</h2>
-                            </div>
-                        </div>
-                        <div class="chart-frame" id="discountScatterWrap">
-                            <canvas id="discountScatterChart"></canvas>
-                        </div>
+                <section class="card mb-8">
+                    <h2 class="panel-title">Discount vs. Profit Margin</h2>
+                    <p class="text-muted" style="margin-top:4px; font-size:0.82rem;">Bubble size represents the number of transactions.</p>
+                    <div class="chart-container" id="discountScatterWrap">
+                        <canvas id="discountScatterChart"></canvas>
                     </div>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-body">
-                        <div class="panel-header">
-                            <div>
-                                <h2 class="panel-title">Trend Over Time</h2>
-                            </div>
-                        </div>
-                        <div class="chart-frame" id="discountTrendWrap">
-                            <canvas id="discountTrendChart"></canvas>
-                        </div>
+                <section class="card mb-8">
+                    <h2 class="panel-title">Trend Over Time</h2>
+                    <div class="chart-container" id="discountTrendWrap">
+                        <canvas id="discountTrendChart"></canvas>
                     </div>
                 </section>
 
-                <section class="panel">
-                    <div class="panel-body">
-                        <div class="panel-header">
-                            <div>
-                                <h2 class="panel-title">Detail Table</h2>
-                            </div>
-                        </div>
-                        <div class="data-table-wrap">
-                            <table class="data-table" id="discountTable">
-                                <thead>
-                                    <tr>
-                                        <th class="is-sortable" data-key="category">Category</th>
-                                        <th class="is-sortable" data-key="sub_category">Sub-category</th>
-                                        <th class="numeric is-sortable" data-key="avg_discount">Avg Discount</th>
-                                        <th class="numeric is-sortable" data-key="avg_profit_margin">Avg Profit Margin</th>
-                                        <th class="is-sortable" data-key="effectiveness">Effectiveness</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="discountTableBody"></tbody>
-                            </table>
-                        </div>
+                <section class="card mb-8">
+                    <h2 class="panel-title">Detail Table</h2>
+                    <div class="table-wrap">
+                        <table class="data-table" id="discountTable">
+                            <thead>
+                                <tr>
+                                    <th class="is-sortable" data-key="category">Category</th>
+                                    <th class="is-sortable" data-key="sub_category">Sub-category</th>
+                                    <th class="numeric is-sortable" data-key="avg_discount">Avg Discount</th>
+                                    <th class="numeric is-sortable" data-key="avg_profit_margin">Avg Margin</th>
+                                    <th class="numeric is-sortable" data-key="transaction_count">Transactions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="discountTableBody"></tbody>
+                        </table>
                     </div>
                 </section>
             </div>
@@ -193,14 +173,14 @@
         function renderDiscountDashboard() {
             const rows = getFilteredDiscountRows();
 
-            renderDiscountKPIs(rows);
+            renderDiscountMetrics(rows);
             renderDiscountSpotlight(rows);
             renderDiscountScatter(rows);
             renderDiscountTrend(rows);
             renderDiscountTable(rows);
         }
 
-        function renderDiscountKPIs(rows) {
+        function renderDiscountMetrics(rows) {
             const totalTransactions = rows.reduce((sum, row) => sum + row.transaction_count, 0);
             const weightedDiscount = totalTransactions === 0
                 ? 0
@@ -214,16 +194,12 @@
                 : (weightedMargin < 0 || negativeCount > rows.length / 2 ? 'Negative' : 'Positive');
             const tone = weightedMargin > 0 ? 'text-success' : (weightedMargin < 0 ? 'text-danger' : '');
 
-            document.getElementById('discountAvgDiscount').textContent = dashboardUtils.formatPercent(weightedDiscount * 100);
-            document.getElementById('discountAvgMargin').textContent = dashboardUtils.formatPercent(weightedMargin);
-            document.getElementById('discountStatus').textContent = status;
-            document.getElementById('discountSubcategories').textContent = dashboardUtils.formatNumber(rows.length);
-            document.getElementById('discountAvgMargin').className = `kpi-value ${tone}`.trim();
-            document.getElementById('discountStatus').className = `kpi-value ${status === 'Positive' ? 'text-success' : (status === 'Negative' ? 'text-danger' : '')}`.trim();
-            document.getElementById('discountStatusMeta').textContent =
-                rows.length === 0
-                    ? 'No sub-category is available for the current filter.'
-                    : `${negativeCount} of ${rows.length} visible sub-categories are currently flagged as negative.`;
+            document.getElementById('discountAvg').textContent = dashboardUtils.formatPercent(weightedDiscount * 100);
+            document.getElementById('discountMargin').textContent = dashboardUtils.formatPercent(weightedMargin);
+            document.getElementById('discountCount').textContent = dashboardUtils.formatNumber(rows.length);
+            document.getElementById('discountWarningCount').textContent = dashboardUtils.formatNumber(negativeCount);
+            
+            document.getElementById('discountMargin').className = `metric-value ${tone}`.trim();
         }
 
         function renderDiscountSpotlight(rows) {
@@ -309,8 +285,8 @@
                     backgroundColor: color.bg,
                     borderColor: color.border,
                     borderWidth: 2,
-                    pointRadius: categoryRows.map((row) => Math.min(12, 5 + (row.transaction_count / 30))),
-                    pointHoverRadius: categoryRows.map((row) => Math.min(15, 7 + (row.transaction_count / 24))),
+                    pointRadius: categoryRows.map((row) => Math.max(4, Math.min(22, Math.sqrt(row.transaction_count) * 0.85))),
+                    pointHoverRadius: categoryRows.map((row) => Math.max(6, Math.min(24, Math.sqrt(row.transaction_count) * 0.85 + 2))),
                 };
             });
 
@@ -442,11 +418,14 @@
 
                                 return Number((((bucket.discountWeighted / bucket.discountWeight) || 0) * 100).toFixed(2));
                             }),
-                            borderColor: '#c2410c',
-                            backgroundColor: 'rgba(194, 65, 12, 0.14)',
+                            borderColor: '#ea580c',
+                            backgroundColor: 'rgba(234, 88, 12, 0.10)',
                             yAxisID: 'discountAxis',
                             tension: 0.35,
-                            pointRadius: 0,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#ea580c',
+                            borderWidth: 2.5,
                         },
                         {
                             label: 'Profit margin (%)',
@@ -458,11 +437,14 @@
 
                                 return Number(((bucket.marginWeighted / bucket.marginWeight) || 0).toFixed(2));
                             }),
-                            borderColor: '#1f7a4d',
-                            backgroundColor: 'rgba(31, 122, 77, 0.14)',
+                            borderColor: '#16a34a',
+                            backgroundColor: 'rgba(22, 163, 74, 0.10)',
                             yAxisID: 'marginAxis',
                             tension: 0.35,
-                            pointRadius: 0,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#16a34a',
+                            borderWidth: 2.5,
                         },
                     ],
                 },
@@ -536,7 +518,7 @@
                         <td>${row.sub_category}</td>
                         <td class="numeric">${dashboardUtils.formatPercent(row.avg_discount * 100)}</td>
                         <td class="numeric ${toneClass}">${dashboardUtils.formatPercent(row.avg_profit_margin)}</td>
-                        <td><span class="status-pill ${effectClass}">${row.effectiveness}</span></td>
+                        <td class="numeric">${dashboardUtils.formatNumber(row.transaction_count)}</td>
                     </tr>
                 `;
             }).join('');
