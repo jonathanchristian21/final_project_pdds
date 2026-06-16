@@ -97,9 +97,9 @@
                         <div class="metric-meta">Selected window</div>
                     </article>
                     <article class="metric-card">
-                        <div class="metric-label">Monthly Avg Sales</div>
+                        <div class="metric-label" id="trendAvgSalesLabel">Avg Sales / Period</div>
                         <div class="metric-value" id="trendAvgSales">-</div>
-                        <div class="metric-meta">Mean over period</div>
+                        <div class="metric-meta" id="trendAvgSalesMeta">Mean over period</div>
                     </article>
                     <article class="metric-card">
                         <div class="metric-label">Total Transactions</div>
@@ -123,7 +123,7 @@
                 </section>
 
                 <section class="card mb-8">
-                    <h2 class="panel-title">Monthly Revenue Trajectory</h2>
+                    <h2 class="panel-title" id="trendChartTitle">Revenue Trajectory</h2>
                     <div class="chart-container" id="trendChartWrap">
                         <canvas id="trendLineChart"></canvas>
                     </div>
@@ -138,8 +138,10 @@
                                     <th class="is-sortable" data-key="category">Category</th>
                                     <th class="is-sortable" data-key="region">Region</th>
                                     <th class="numeric is-sortable" data-key="total_sales">Total Sales</th>
-                                    <th class="numeric is-sortable" data-key="avg_monthly_sales">Avg Monthly Sales</th>
+                                    <th class="numeric is-sortable" data-key="avg_monthly_sales" id="trendTableAvgHeader">Avg Sales / Period</th>
                                     <th class="numeric is-sortable" data-key="transaction_count">Transactions</th>
+                                    <th class="numeric is-sortable" data-key="growth_rate">Growth Rate</th>
+                                    <th class="is-sortable" data-key="status">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="trendTableBody"></tbody>
@@ -390,9 +392,12 @@
 
                     const total_sales = filteredPeriods.reduce((sum, period) => sum + Number(period.sales || 0), 0);
                     const transaction_count = filteredPeriods.reduce((sum, period) => sum + Number(period.transaction_count || 0), 0);
-                    
-                    // If granularity is not month, we might need a better average, but for now length is fine
-                    const avg_monthly_sales = filteredPeriods.length > 0 ? total_sales / filteredPeriods.length : 0;
+
+                    // Count distinct buckets for the active granularity (not raw monthly rows)
+                    const distinctBuckets = new Set(
+                        filteredPeriods.map((p) => trendBucket(p, trendState.granularity))
+                    ).size;
+                    const avg_monthly_sales = distinctBuckets > 0 ? total_sales / distinctBuckets : 0;
 
                     return {
                         category: item.category,
@@ -430,6 +435,12 @@
             renderTrendTable(rows);
         }
 
+        function getGranularityLabel(granularity) {
+            if (granularity === 'quarter') return 'Quarter';
+            if (granularity === 'year')    return 'Year';
+            return 'Month';
+        }
+
         function renderTrendMetrics(rows, groupedSeries) {
             const totalSales = rows.reduce((sum, row) => sum + row.total_sales, 0);
             const overallGrowth = computeGrowthFromPeriods(
@@ -437,15 +448,29 @@
                 trendState.granularity
             );
             const tone = overallGrowth.rate > 0 ? 'text-success' : (overallGrowth.rate < 0 ? 'text-danger' : '');
-            const avgSales = rows.reduce((sum, row) => sum + row.avg_monthly_sales, 0);
             const totalTransactions = rows.reduce((sum, row) => sum + row.transaction_count, 0);
 
+            // Correct avg: total sales across ALL visible rows / number of distinct buckets across ALL visible rows
+            const allPeriods = rows.flatMap((row) => row.period_data);
+            const distinctBuckets = new Set(
+                allPeriods.map((p) => trendBucket(p, trendState.granularity))
+            ).size;
+            const avgSales = distinctBuckets > 0 ? totalSales / distinctBuckets : 0;
+
+            const granLabel = getGranularityLabel(trendState.granularity);
+
+            // Update dynamic labels
+            document.getElementById('trendAvgSalesLabel').textContent = `Avg Sales / ${granLabel}`;
+            document.getElementById('trendAvgSalesMeta').textContent  = `Mean per ${granLabel.toLowerCase()} over period`;
+            document.getElementById('trendTableAvgHeader').textContent = `Avg Sales / ${granLabel}`;
+            document.getElementById('trendChartTitle').textContent     = `${granLabel}ly Revenue Trajectory`;
+
             document.getElementById('trendTotalSales').textContent = dashboardUtils.formatCurrency(totalSales);
-            document.getElementById('trendAvgSales').textContent = dashboardUtils.formatCurrency(avgSales / Math.max(1, rows.length));
+            document.getElementById('trendAvgSales').textContent   = dashboardUtils.formatCurrency(avgSales);
             document.getElementById('trendTransactions').textContent = dashboardUtils.formatNumber(totalTransactions);
-            document.getElementById('trendGrowth').textContent = dashboardUtils.formatPercent(overallGrowth.rate);
-            document.getElementById('trendGrowthMeta').textContent = overallGrowth.message;
-            document.getElementById('trendGrowth').className = `metric-value ${tone}`.trim();
+            document.getElementById('trendGrowth').textContent     = dashboardUtils.formatPercent(overallGrowth.rate);
+            document.getElementById('trendGrowthMeta').textContent  = overallGrowth.message;
+            document.getElementById('trendGrowth').className       = `metric-value ${tone}`.trim();
         }
 
         function renderTrendSpotlight(rows, mode) {
@@ -584,7 +609,7 @@
             if (!sortedRows.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <strong>No detail rows match the active trend filters.</strong>
                                 <span>Reset the view to recover the full category-region list.</span>
@@ -605,6 +630,8 @@
                         <td><strong>${row.category}</strong></td>
                         <td>${row.region}</td>
                         <td class="numeric">${dashboardUtils.formatCurrency(row.total_sales)}</td>
+                        <td class="numeric">${dashboardUtils.formatCurrency(row.avg_monthly_sales)}</td>
+                        <td class="numeric">${dashboardUtils.formatNumber(row.transaction_count)}</td>
                         <td class="numeric ${toneText}">${dashboardUtils.formatPercent(row.growth_rate)}</td>
                         <td><span class="status-pill ${tone}">${statusText}</span></td>
                     </tr>
