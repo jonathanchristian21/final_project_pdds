@@ -371,10 +371,17 @@
         let profitBarChart = null;
 
         const profitabilityState = {
+            year:          'all',
             start:         profitabilityMeta.date_range.start,
             end:           profitabilityMeta.date_range.end,
             sortKey:       'total_profit',
             sortDirection: 'desc',
+        };
+
+        const profitabilityDraftState = {
+            year:  'all',
+            start: profitabilityMeta.date_range.start,
+            end:   profitabilityMeta.date_range.end,
         };
 
         /* ── Drilldown state ──────────────────────────────── */
@@ -398,7 +405,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             bindProfitabilityEvents();
             bindDrilldownEvents();
-            syncProfitInputsFromState();
+            syncProfitControlsFromDraft();
             renderProfitabilityDashboard();
         });
 
@@ -408,33 +415,46 @@
         function bindProfitabilityEvents() {
             yearFilter.addEventListener('change', () => {
                 if (yearFilter.value === 'all') {
-                    startMonthInput.value = profitabilityMeta.date_range.start;
-                    endMonthInput.value   = profitabilityMeta.date_range.end;
+                    profitabilityDraftState.start = profitabilityMeta.date_range.start;
+                    profitabilityDraftState.end   = profitabilityMeta.date_range.end;
                 } else {
-                    startMonthInput.value = `${yearFilter.value}-01`;
-                    endMonthInput.value   = `${yearFilter.value}-12`;
+                    profitabilityDraftState.start = `${yearFilter.value}-01`;
+                    profitabilityDraftState.end   = `${yearFilter.value}-12`;
                 }
+                profitabilityDraftState.year = yearFilter.value;
+                syncProfitControlsFromDraft();
+            });
+
+            startMonthInput.addEventListener('change', () => {
+                profitabilityDraftState.start = startMonthInput.value || profitabilityMeta.date_range.start;
+            });
+
+            endMonthInput.addEventListener('change', () => {
+                profitabilityDraftState.end = endMonthInput.value || profitabilityMeta.date_range.end;
             });
 
             document.getElementById('profitApplyButton').addEventListener('click', () => {
-                const nextStart = startMonthInput.value || profitabilityMeta.date_range.start;
-                let   nextEnd   = endMonthInput.value   || profitabilityMeta.date_range.end;
+                let nextStart = profitabilityDraftState.start;
+                let nextEnd   = profitabilityDraftState.end;
 
                 if (nextStart > nextEnd) nextEnd = nextStart;
 
+                profitabilityState.year  = profitabilityDraftState.year;
                 profitabilityState.start = nextStart;
                 profitabilityState.end   = nextEnd;
-                syncProfitInputsFromState();
                 renderProfitabilityDashboard();
             });
 
             document.getElementById('profitResetButton').addEventListener('click', () => {
+                profitabilityState.year          = 'all';
                 profitabilityState.start         = profitabilityMeta.date_range.start;
                 profitabilityState.end           = profitabilityMeta.date_range.end;
                 profitabilityState.sortKey       = 'total_profit';
                 profitabilityState.sortDirection = 'desc';
-                yearFilter.value = 'all';
-                syncProfitInputsFromState();
+                profitabilityDraftState.year  = 'all';
+                profitabilityDraftState.start = profitabilityMeta.date_range.start;
+                profitabilityDraftState.end   = profitabilityMeta.date_range.end;
+                syncProfitControlsFromDraft();
                 renderProfitabilityDashboard();
             });
 
@@ -619,18 +639,10 @@
         /* ══════════════════════════════════════════════════ */
         /*  Core rendering helpers                            */
         /* ══════════════════════════════════════════════════ */
-        function syncProfitInputsFromState() {
-            startMonthInput.value = profitabilityState.start;
-            endMonthInput.value   = profitabilityState.end;
-
-            const stateYear =
-                profitabilityState.start.slice(0, 4) === profitabilityState.end.slice(0, 4) &&
-                profitabilityState.start.endsWith('-01') &&
-                profitabilityState.end.endsWith('-12')
-                    ? profitabilityState.start.slice(0, 4)
-                    : 'all';
-
-            yearFilter.value = profitabilityMeta.years.map(String).includes(stateYear) ? stateYear : 'all';
+        function syncProfitControlsFromDraft() {
+            yearFilter.value      = profitabilityDraftState.year;
+            startMonthInput.value = profitabilityDraftState.start;
+            endMonthInput.value   = profitabilityDraftState.end;
         }
 
         function buildProfitabilityRows() {

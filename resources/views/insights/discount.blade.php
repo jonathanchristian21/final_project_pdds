@@ -124,14 +124,23 @@
             sortDirection: 'asc',
         };
 
+        const discountDraftState = {
+            category: 'all',
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             bindDiscountEvents();
+            syncDiscountControlsFromDraft();
             renderDiscountDashboard();
         });
 
         function bindDiscountEvents() {
             document.getElementById('discountCategoryFilter').addEventListener('change', (event) => {
-                discountState.category = event.target.value;
+                discountDraftState.category = event.target.value;
+            });
+
+            document.getElementById('discountApplyButton').addEventListener('click', () => {
+                discountState.category = discountDraftState.category;
                 renderDiscountDashboard();
             });
 
@@ -139,7 +148,8 @@
                 discountState.category = 'all';
                 discountState.sortKey = 'avg_profit_margin';
                 discountState.sortDirection = 'asc';
-                document.getElementById('discountCategoryFilter').value = 'all';
+                discountDraftState.category = 'all';
+                syncDiscountControlsFromDraft();
                 renderDiscountDashboard();
             });
 
@@ -153,6 +163,10 @@
                     renderDiscountTable(getFilteredDiscountRows());
                 });
             });
+        }
+
+        function syncDiscountControlsFromDraft() {
+            document.getElementById('discountCategoryFilter').value = discountDraftState.category;
         }
 
         function getFilteredDiscountRows() {
