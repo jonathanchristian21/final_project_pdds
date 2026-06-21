@@ -54,8 +54,8 @@ class InsightDashboardService
                 'positive_discount_count' => $discountInsights->count() - $negativeDiscountCount,
                 'top_profit_segment' => $profitInsights->sortByDesc('metrics.profit_margin')->first(),
                 'weakest_profit_segment' => $profitInsights->sortBy('metrics.profit_margin')->first(),
-                'top_growth_segment' => $trendInsights->sortByDesc('analysis_result.growth_rate')->first(),
-                'watchlist_discount_segment' => $discountInsights->sortBy('metrics.total_profit')->first(),
+                'top_growth_segment' => $trendInsights->sortByDesc('analysis_result.last_year_growth')->first(),
+                'watchlist_discount_segment' => $trendInsights->sortBy('analysis_result.last_year_growth')->first(),
             ],
         ];
     }
@@ -238,26 +238,56 @@ class InsightDashboardService
     {
         return $this->sortByCategoryRegion(
             $insights->map(function (Insight $item) {
-                return [
-                    'category' => $item->dimensions['category'] ?? '-',
-                    'region' => $item->dimensions['region'] ?? '-',
-                    'metrics' => [
-                        'total_sales' => round((float) ($item->metrics['total_sales'] ?? 0), 2),
-                        'transaction_count' => (int) ($item->metrics['transaction_count'] ?? 0),
-                        'avg_monthly_sales' => round((float) ($item->metrics['avg_monthly_sales'] ?? 0), 2),
-                    ],
-                    'period_data' => $this->normalizePeriods($item->period_data ?? [], [
+                    $periodData = $this->normalizePeriods($item->period_data ?? [], [
                         'sales',
                         'transaction_count',
                         'avg_sales',
-                    ]),
-                    'analysis_result' => [
-                        'growth_rate' => round((float) ($item->analysis_result['growth_rate'] ?? 0), 2),
-                        'sales_trend' => $item->analysis_result['sales_trend'] ?? 'stable',
-                        'comparison_basis' => $item->analysis_result['comparison_basis'] ?? '',
-                        'summary' => $item->analysis_result['summary'] ?? '',
-                    ],
-                ];
+                    ]);
+
+                    // Hitung yearly sales untuk membandingkan tahun terakhir dan tahun sebelumnya
+                    $yearlySales = [];
+                    foreach ($periodData as $p) {
+                        $y = $p['year'];
+                        if (!isset($yearlySales[$y])) {
+                            $yearlySales[$y] = 0;
+                        }
+                        $yearlySales[$y] += $p['sales'];
+                    }
+                    ksort($yearlySales);
+                    $years = array_keys($yearlySales);
+                    $yearCount = count($years);
+                    
+                    $lastYearGrowth = 0;
+                    $lastYearBasis = '';
+                    if ($yearCount >= 2) {
+                        $lastY = $years[$yearCount - 1];
+                        $prevY = $years[$yearCount - 2];
+                        $lastS = $yearlySales[$lastY];
+                        $prevS = $yearlySales[$prevY];
+                        if ($prevS > 0) {
+                            $lastYearGrowth = (($lastS - $prevS) / $prevS) * 100;
+                            $lastYearBasis = "{$prevY} vs {$lastY}";
+                        }
+                    }
+
+                    return [
+                        'category' => $item->dimensions['category'] ?? '-',
+                        'region' => $item->dimensions['region'] ?? '-',
+                        'metrics' => [
+                            'total_sales' => round((float) ($item->metrics['total_sales'] ?? 0), 2),
+                            'transaction_count' => (int) ($item->metrics['transaction_count'] ?? 0),
+                            'avg_monthly_sales' => round((float) ($item->metrics['avg_monthly_sales'] ?? 0), 2),
+                        ],
+                        'period_data' => $periodData,
+                        'analysis_result' => [
+                            'growth_rate' => round((float) ($item->analysis_result['growth_rate'] ?? 0), 2),
+                            'last_year_growth' => round($lastYearGrowth, 2),
+                            'last_year_basis' => $lastYearBasis,
+                            'sales_trend' => $item->analysis_result['sales_trend'] ?? 'stable',
+                            'comparison_basis' => $item->analysis_result['comparison_basis'] ?? '',
+                            'summary' => $item->analysis_result['summary'] ?? '',
+                        ],
+                    ];
             })
         )->values()->all();
     }

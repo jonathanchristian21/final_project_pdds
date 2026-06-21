@@ -98,18 +98,22 @@
                 </div>
 
                 <div class="card">
-                    <h2>Discount & Trend Alerts</h2>
+                    <h2>Sales Trend Alerts</h2>
                     <ul style="list-style: none; display: grid; gap: 16px; margin-top: 20px;">
                         <li>
-                            <div class="metric-label">Fastest Growing</div>
+                            <div class="metric-label">Fastest Growing (Last Year)</div>
                             <div style="font-weight: 500; margin-top: 4px;">{{ $summary['top_growth_segment']['category'] }} in {{ $summary['top_growth_segment']['region'] }}</div>
-                            <div class="text-success" style="font-size: 0.875rem;">Trending Upwards</div>
+                            <div class="text-success" style="font-size: 0.875rem;">
+                                Up {{ number_format($summary['top_growth_segment']['analysis_result']['last_year_growth'], 1) }}% in {{ $summary['top_growth_segment']['analysis_result']['last_year_basis'] ?: 'latest period' }}
+                            </div>
                         </li>
                         <hr style="border: 0; border-top: 1px solid var(--border-light);">
                         <li>
-                            <div class="metric-label">Discount Warning</div>
-                            <div style="font-weight: 500; margin-top: 4px;">{{ $summary['watchlist_discount_segment']['sub_category'] }} in {{ $summary['watchlist_discount_segment']['category'] }}</div>
-                            <div class="text-danger" style="font-size: 0.875rem;">High discount driving negative margins</div>
+                            <div class="metric-label">Sharpest Decline (Last Year)</div>
+                            <div style="font-weight: 500; margin-top: 4px;">{{ $summary['watchlist_discount_segment']['category'] }} in {{ $summary['watchlist_discount_segment']['region'] }}</div>
+                            <div class="text-danger" style="font-size: 0.875rem;">
+                                Down {{ number_format(abs($summary['watchlist_discount_segment']['analysis_result']['last_year_growth']), 1) }}% in {{ $summary['watchlist_discount_segment']['analysis_result']['last_year_basis'] ?: 'latest period' }}
+                            </div>
                         </li>
                     </ul>
                 </div>
